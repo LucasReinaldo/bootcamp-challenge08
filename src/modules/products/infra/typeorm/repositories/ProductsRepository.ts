@@ -54,8 +54,10 @@ class ProductsRepository implements IProductsRepository {
 
   public async updateQuantity(
     products: IUpdateProductsQuantityDTO[],
-  ): Promise<Product[] | any> {
-    console.log(products);
+  ): Promise<Product[]> {
+    const updateQuantityList = await this.ormRepository.save(products);
+
+    return updateQuantityList;
   }
 }
 

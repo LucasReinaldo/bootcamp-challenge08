@@ -4,6 +4,7 @@ import AppError from '@shared/errors/AppError';
 
 import IProductsRepository from '@modules/products/repositories/IProductsRepository';
 import ICustomersRepository from '@modules/customers/repositories/ICustomersRepository';
+import IUpdateProductsQuantityDTO from '@modules/products/dtos/IUpdateProductsQuantityDTO';
 import Order from '../infra/typeorm/entities/Order';
 import IOrdersRepository from '../repositories/IOrdersRepository';
 
@@ -40,20 +41,17 @@ class CreateOrderService {
     const checkProducts = await this.productsRepository.findAllById(products);
 
     if (!checkProducts) {
-      throw new AppError('Product not found.');
+      throw new AppError('Product not found, check your list.');
     }
 
     if (checkProducts.length === 0) {
       throw new AppError('Please, add at least one product.');
     }
 
+    const updateQnt: IUpdateProductsQuantityDTO[] = [];
+
     const productsList = products.map(product => {
       const productItem = checkProducts.find(prod => prod.id === product.id);
-      const productItem2 = checkProducts.find(
-        prod => console.log(prod.id) === console.log(product.id),
-      );
-      console.log(productItem2);
-
       const price = productItem?.price || 0;
 
       if (!productItem) {
@@ -63,6 +61,11 @@ class CreateOrderService {
       if (productItem.quantity < product.quantity) {
         throw new AppError('Quantity of products available dos not match.');
       }
+
+      updateQnt.push({
+        id: product.id,
+        quantity: productItem.quantity - product.quantity,
+      });
 
       return {
         product_id: product.id,
@@ -75,6 +78,8 @@ class CreateOrderService {
       customer: checkCustomerExists,
       products: productsList,
     });
+
+    await this.productsRepository.updateQuantity(updateQnt);
 
     return order;
   }
